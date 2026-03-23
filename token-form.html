@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Threads Token 換取工具</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0F172A;
+    color: #E2E8F0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+  .card {
+    background: #1E293B;
+    border-radius: 16px;
+    padding: 28px;
+    width: 100%;
+    max-width: 560px;
+    border: 1px solid #334155;
+  }
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #334155;
+  }
+  .logo { font-size: 32px; }
+  .header h1 { font-size: 18px; font-weight: bold; color: #F1F5F9; }
+  .header p { font-size: 12px; color: #64748B; margin-top: 2px; }
+
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #94A3B8;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .field { margin-bottom: 18px; }
+
+  input[type="text"], input[type="url"], textarea, select {
+    width: 100%;
+    background: #0F172A;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: #E2E8F0;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: inherit;
+  }
+  input[type="text"]:focus, input[type="url"]:focus, textarea:focus, select:focus {
+    border-color: #3B82F6;
+  }
+  textarea {
+    min-height: 90px;
+    resize: vertical;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  select option { background: #1E293B; }
+
+  .btn {
+    width: 100%;
+    padding: 14px;
+    background: #3B82F6;
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn:hover { background: #2563EB; }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { background: #334155; cursor: not-allowed; }
+
+  .result {
+    margin-top: 20px;
+    padding: 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    display: none;
+  }
+  .result.success {
+    background: #064E3B;
+    border: 1px solid #10B98144;
+    color: #6EE7B7;
+    display: block;
+  }
+  .result.error {
+    background: #450A0A;
+    border: 1px solid #EF444444;
+    color: #FCA5A5;
+    display: block;
+  }
+  .result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .result-row:last-child { border-bottom: none; }
+  .result-label { color: #94A3B8; font-size: 12px; }
+  .result-value { font-weight: bold; font-family: monospace; font-size: 12px; color: #86EFAC; }
+  .result-value.long { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+  .result-value.long:hover { color: #6EE7B7; }
+
+  .hint {
+    font-size: 11px;
+    color: #475569;
+    margin-top: 4px;
+  }
+  .step-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #0F172A;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 11px;
+    color: #64748B;
+    margin-bottom: 16px;
+  }
+  .loading-dots::after {
+    content: '';
+    animation: dots 1.2s infinite;
+  }
+  @keyframes dots {
+    0%, 20%  { content: ''; }
+    40%       { content: '.'; }
+    60%       { content: '..'; }
+    80%, 100% { content: '...'; }
+  }
+  .webhook-section {
+    background: #0F172A;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 20px;
+    border: 1px solid #1E293B;
+  }
+  .webhook-label {
+    font-size: 11px;
+    color: #64748B;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    <div class="logo">🧵</div>
+    <div>
+      <h1>Threads Token 換取工具</h1>
+      <p>Nick Chang｜ZN Studio｜自動換60天Token + 取得帳號ID</p>
+    </div>
+  </div>
+
+  <!-- Webhook URL 設定 -->
+  <div class="webhook-section">
+    <div class="webhook-label">⚙️ n8n Webhook URL（第一次使用請設定）</div>
+    <input type="url" id="webhookUrl"
+      placeholder="https://你的n8n.zeabur.app/webhook/threads-exchange-token"
+      oninput="saveWebhook(this.value)"
+    >
+  </div>
+
+  <!-- 步驟說明 -->
+  <div class="step-badge">
+    📋 步驟：Graph API Explorer 複製短期Token → 貼進下方 → 送出 → 自動完成
+  </div>
+
+  <!-- 帳號名稱 -->
+  <div class="field">
+    <label>帳號名稱（Sheets 第一欄）</label>
+    <input type="text" id="accountName" placeholder="例如：ameliajitingt">
+    <p class="hint">輸入 Sheets 裡「帳號」欄位的名稱</p>
+  </div>
+
+  <!-- 短期 Token -->
+  <div class="field">
+    <label>短期 Token（從 Graph API Explorer 複製）</label>
+    <textarea id="shortToken" placeholder="貼上從 Graph API Explorer 複製的 Token&#10;THAAM3W1JKfSNBUV..."></textarea>
+    <p class="hint">從 Meta Graph API Explorer 生成並複製的用戶存取權杖</p>
+  </div>
+
+  <!-- 送出按鈕 -->
+  <button class="btn" id="submitBtn" onclick="submitToken()">
+    <span id="btnIcon">🚀</span>
+    <span id="btnText">換取60天Token + 取得ID</span>
+  </button>
+
+  <!-- 結果顯示 -->
+  <div class="result" id="resultBox"></div>
+</div>
+
+<script>
+  // 預設 Webhook URL
+  const DEFAULT_WEBHOOK = 'https://nickleo9.zeabur.app/webhook/threads-exchange-token';
+  const saved = localStorage.getItem('n8n_webhook_url') || DEFAULT_WEBHOOK;
+  document.getElementById('webhookUrl').value = saved;
+
+  function saveWebhook(val) {
+    localStorage.setItem('n8n_webhook_url', val);
+  }
+
+  async function submitToken() {
+    const webhookUrl = document.getElementById('webhookUrl').value.trim();
+    const account    = document.getElementById('accountName').value.trim();
+    const shortToken = document.getElementById('shortToken').value.trim();
+    const resultBox  = document.getElementById('resultBox');
+    const btn        = document.getElementById('submitBtn');
+
+    // 驗證
+    if (!webhookUrl) return showError('請輸入 n8n Webhook URL');
+    if (!account)    return showError('請輸入帳號名稱');
+    if (!shortToken) return showError('請貼上短期 Token');
+
+    // Loading 狀態
+    btn.disabled = true;
+    document.getElementById('btnIcon').textContent = '⏳';
+    document.getElementById('btnText').className = 'loading-dots';
+    document.getElementById('btnText').textContent = '處理中';
+    resultBox.className = 'result';
+
+    try {
+      const res = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          account:     account,
+          short_token: shortToken.replace(/\s+/g, '') // 移除空白
+        })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        showSuccess(data);
+        // 清空 token 欄位（帳號保留方便連續操作）
+        document.getElementById('shortToken').value = '';
+      } else {
+        showError(data.message || '發生錯誤，請檢查 n8n 工作流');
+      }
+    } catch (err) {
+      showError(`連線失敗：${err.message}\n請確認 Webhook URL 是否正確`);
+    } finally {
+      btn.disabled = false;
+      document.getElementById('btnIcon').textContent = '🚀';
+      document.getElementById('btnText').className = '';
+      document.getElementById('btnText').textContent = '換取60天Token + 取得ID';
+    }
+  }
+
+  function showSuccess(data) {
+    const box = document.getElementById('resultBox');
+    box.className = 'result success';
+    box.innerHTML = `
+      <div style="font-weight:bold;font-size:14px;margin-bottom:12px;">✅ 成功！已自動存入 Sheets</div>
+      <div class="result-row">
+        <span class="result-label">帳號</span>
+        <span class="result-value">${data.account || '-'}</span>
+      </div>
+      <div class="result-row">
+        <span class="result-label">Threads ID</span>
+        <span class="result-value" onclick="copyText('${data.threadsId}')" title="點擊複製">${data.threadsId || '-'} 📋</span>
+      </div>
+      <div class="result-row">
+        <span class="result-label">Token 到期日</span>
+        <span class="result-value">${data.expiryDate || '約60天後'}</span>
+      </div>
+      <div class="result-row">
+        <span class="result-label">狀態</span>
+        <span class="result-value">等待測試 ✓</span>
+      </div>
+      <div style="margin-top:10px;font-size:11px;color:#6EE7B7;opacity:0.7;">
+        TokenID 與60天Token已自動寫入 Google Sheets
+      </div>
+    `;
+  }
+
+  function showError(msg) {
+    const box = document.getElementById('resultBox');
+    box.className = 'result error';
+    box.innerHTML = `
+      <div style="font-weight:bold;margin-bottom:6px;">❌ 發生錯誤</div>
+      <div style="font-size:12px;white-space:pre-wrap;">${msg}</div>
+    `;
+  }
+
+  function copyText(text) {
+    navigator.clipboard.writeText(text).then(() => {
+      alert('已複製：' + text);
+    });
+  }
+
+  // Enter 鍵送出
+  document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.key === 'Enter') submitToken();
+  });
+</script>
+</body>
+</html>
