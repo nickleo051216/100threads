@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Threads 操作面板｜ZN Studio</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #0A0F1A;
+  color: #E2E8F0;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh;
+  padding: 20px 16px 40px;
+}
+.container { max-width: 520px; margin: 0 auto; }
+
+/* Header */
+.header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+.header h1 { font-size: 20px; font-weight: bold; color: #F1F5F9; }
+.header p { font-size: 12px; color: #475569; margin-top: 4px; }
+
+/* Account input */
+.account-bar {
+  background: #1E293B;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  border: 1px solid #334155;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.account-bar label { font-size: 12px; color: #64748B; white-space: nowrap; }
+.account-bar input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #F1F5F9;
+  font-size: 15px;
+  font-weight: bold;
+  outline: none;
+}
+.account-bar input::placeholder { color: #334155; font-weight: normal; }
+
+/* Step cards */
+.step-card {
+  background: #1E293B;
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 14px;
+  border: 1px solid #334155;
+  transition: border-color 0.2s;
+}
+.step-card.active { border-color: #3B82F6; }
+.step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.step-num {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: #0F172A;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: bold; color: #64748B;
+  border: 1px solid #334155;
+  flex-shrink: 0;
+}
+.step-num.done { background: #064E3B; color: #10B981; border-color: #10B981; }
+.step-title { font-size: 15px; font-weight: bold; color: #F1F5F9; }
+.step-sub { font-size: 11px; color: #64748B; margin-top: 1px; }
+
+/* OTP display */
+.otp-box {
+  background: #0F172A;
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+  margin-bottom: 12px;
+  border: 1px solid #334155;
+  position: relative;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+}
+.otp-digits {
+  font-size: 42px;
+  font-weight: bold;
+  letter-spacing: 10px;
+  color: #38BDF8;
+  font-family: 'Courier New', monospace;
+  text-shadow: 0 0 20px #38BDF844;
+}
+.otp-digits.expired { color: #475569; }
+.otp-placeholder { color: #334155; font-size: 14px; }
+.otp-timer { font-size: 11px; color: #64748B; }
+
+/* Progress bar */
+.progress-bar {
+  width: 100%;
+  height: 3px;
+  background: #1E293B;
+  border-radius: 99px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.progress-fill {
+  height: 100%;
+  background: #38BDF8;
+  border-radius: 99px;
+  transition: width 1s linear;
+}
+.progress-fill.warning { background: #F59E0B; }
+.progress-fill.danger  { background: #EF4444; }
+
+/* Buttons */
+.btn {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.15s;
+}
+.btn:active { transform: scale(0.98); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-blue  { background: #3B82F6; color: white; }
+.btn-blue:hover:not(:disabled) { background: #2563EB; }
+.btn-green { background: #10B981; color: white; }
+.btn-green:hover:not(:disabled) { background: #059669; }
+.btn-orange { background: #F59E0B; color: #0F172A; }
+.btn-orange:hover:not(:disabled) { background: #D97706; }
+
+textarea {
+  width: 100%;
+  background: #0F172A;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #E2E8F0;
+  font-size: 12px;
+  font-family: 'Courier New', monospace;
+  outline: none;
+  resize: vertical;
+  min-height: 72px;
+  margin-bottom: 10px;
+  transition: border-color 0.2s;
+  line-height: 1.5;
+}
+textarea:focus { border-color: #3B82F6; }
+textarea::placeholder { color: #334155; font-family: 'Segoe UI', sans-serif; font-size: 12px; }
+
+/* Result */
+.result {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  display: none;
+}
+.result.success { background: #064E3B; border: 1px solid #10B98133; color: #6EE7B7; display: block; }
+.result.error   { background: #450A0A; border: 1px solid #EF444433; color: #FCA5A5; display: block; }
+
+.result-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.result-row:last-child { border-bottom: none; }
+.result-key { color: #64748B; }
+.result-val { font-weight: bold; color: #86EFAC; cursor: pointer; }
+.result-val:hover { color: #34D399; }
+
+/* IP button */
+.ip-status { text-align: center; font-size: 12px; color: #64748B; margin-top: 10px; min-height: 18px; }
+.ip-status.triggered { color: #F59E0B; }
+.ip-status.done { color: #10B981; }
+
+.copy-hint { font-size: 10px; color: #475569; text-align: right; margin-top: 2px; }
+.loading::after { content: ''; animation: dots 1s infinite steps(3); }
+@keyframes dots { 0%{content:'.'} 33%{content:'..'} 66%{content:'...'} 100%{content:''} }
+
+/* Footer */
+.footer { text-align: center; margin-top: 24px; font-size: 11px; color: #1E293B; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>🧵 Threads 操作面板</h1>
+    <p>Nick Chang｜ZN Studio｜nickleo051216@gmail.com</p>
+  </div>
+
+  <!-- 帳號名稱（全域） -->
+  <div class="account-bar">
+    <label>👤 帳號</label>
+    <input type="text" id="accountName" placeholder="輸入帳號名稱（例如：ameliajitingt）"
+      oninput="onAccountChange()"
+    >
+  </div>
+
+  <!-- STEP 1: 取得 2FA -->
+  <div class="step-card" id="card1">
+    <div class="step-header">
+      <div class="step-num" id="step1Num">1</div>
+      <div>
+        <div class="step-title">取得 2FA 驗證碼</div>
+        <div class="step-sub">自動從 Sheets 讀取 Secret 並生成6位數</div>
+      </div>
+    </div>
+
+    <div class="otp-box" id="otpBox">
+      <div class="otp-placeholder" id="otpPlaceholder">先輸入帳號名稱</div>
+      <div class="otp-digits" id="otpDigits" style="display:none">------</div>
+      <div class="otp-timer" id="otpTimer" style="display:none"></div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div style="margin-top:10px;">
+      <button class="btn btn-blue" id="btn2fa" onclick="fetch2FA()" disabled>
+        <span>🔐</span><span id="btn2faText">取得 2FA 碼</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- STEP 2: 換取 Token -->
+  <div class="step-card" id="card2">
+    <div class="step-header">
+      <div class="step-num" id="step2Num">2</div>
+      <div>
+        <div class="step-title">換取 60天 Token + 取得 ID</div>
+        <div class="step-sub">貼上 Graph API Explorer 的短期 Token</div>
+      </div>
+    </div>
+
+    <textarea id="shortToken"
+      placeholder="貼上從 Meta Graph API Explorer 複製的短期 Token&#10;THAAM3W1JKfSNBUV..."
+    ></textarea>
+    <div class="copy-hint">Ctrl+Enter 快速送出</div>
+
+    <button class="btn btn-blue" id="btnToken" onclick="submitToken()">
+      <span>🚀</span><span id="btnTokenText">換取60天Token + 取得ID</span>
+    </button>
+
+    <div class="result" id="tokenResult"></div>
+  </div>
+
+  <!-- STEP 3: 換 IP -->
+  <div class="step-card" id="card3">
+    <div class="step-header">
+      <div class="step-num" id="step3Num">3</div>
+      <div>
+        <div class="step-title">換 IP（觸發手機捷徑）</div>
+        <div class="step-sub">觸發後手機自動飛航換IP，記得重新連熱點</div>
+      </div>
+    </div>
+
+    <button class="btn btn-orange" onclick="triggerIP()">
+      <span>📡</span><span>觸發換IP 捷徑</span>
+    </button>
+    <div class="ip-status" id="ipStatus"></div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    ZN Studio｜<a href="https://portaly.cc/zn.studio" style="color:#334155">portaly.cc/zn.studio</a>
+  </div>
+</div>
+
+<script>
+// ===== 設定 =====
+const WEBHOOK_TOKEN = 'https://nickleo9.zeabur.app/webhook/threads-exchange-token';
+const WEBHOOK_2FA   = 'https://nickleo9.zeabur.app/webhook/get-2fa';
+const PUSHCUT_URL   = 'https://api.pushcut.io/1WGcUv9DUIqIVGrmLVrUl/notifications/My%20ip';
+
+// ===== 狀態 =====
+let otpCountdown = null;
+let currentOTP = '';
+
+// ===== 帳號變更 =====
+function onAccountChange() {
+  const name = document.getElementById('accountName').value.trim();
+  const btn = document.getElementById('btn2fa');
+  btn.disabled = !name;
+  // 帳號改變時清掉舊 OTP
+  clearOTP();
+}
+
+function clearOTP() {
+  if (otpCountdown) clearInterval(otpCountdown);
+  document.getElementById('otpDigits').style.display = 'none';
+  document.getElementById('otpPlaceholder').style.display = 'block';
+  document.getElementById('otpPlaceholder').textContent = '先輸入帳號名稱';
+  document.getElementById('otpTimer').style.display = 'none';
+  document.getElementById('progressFill').style.width = '0%';
+  currentOTP = '';
+}
+
+// ===== 取得 2FA =====
+async function fetch2FA() {
+  const account = document.getElementById('accountName').value.trim();
+  if (!account) return;
+
+  const btn = document.getElementById('btn2fa');
+  const btnText = document.getElementById('btn2faText');
+  btn.disabled = true;
+  btnText.textContent = '讀取中';
+  btnText.className = 'loading';
+
+  try {
+    const res = await fetch(`${WEBHOOK_2FA}?account=${encodeURIComponent(account)}`);
+    const data = await res.json();
+
+    if (data.otp) {
+      showOTP(data.otp);
+      startOTPTimer();
+    } else {
+      showOTPError(data.message || '取得失敗，請確認帳號名稱');
+    }
+  } catch(e) {
+    showOTPError('連線失敗：' + e.message);
+  } finally {
+    btn.disabled = false;
+    btnText.textContent = '重新取得';
+    btnText.className = '';
+  }
+}
+
+function showOTP(otp) {
+  currentOTP = otp;
+  document.getElementById('otpPlaceholder').style.display = 'none';
+  const digits = document.getElementById('otpDigits');
+  digits.style.display = 'block';
+  digits.textContent = otp;
+  digits.className = 'otp-digits';
+  document.getElementById('otpTimer').style.display = 'block';
+  document.getElementById('step1Num').className = 'step-num done';
+  document.getElementById('step1Num').textContent = '✓';
+}
+
+function showOTPError(msg) {
+  document.getElementById('otpPlaceholder').style.display = 'block';
+  document.getElementById('otpPlaceholder').textContent = '❌ ' + msg;
+  document.getElementById('otpDigits').style.display = 'none';
+}
+
+function startOTPTimer() {
+  if (otpCountdown) clearInterval(otpCountdown);
+
+  otpCountdown = setInterval(() => {
+    const now = Math.floor(Date.now() / 1000);
+    const remaining = 30 - (now % 30);
+    const pct = (remaining / 30) * 100;
+
+    const timerEl = document.getElementById('otpTimer');
+    const fillEl  = document.getElementById('progressFill');
+    const digits  = document.getElementById('otpDigits');
+
+    timerEl.textContent = `${remaining} 秒後更新`;
+    fillEl.style.width = pct + '%';
+    fillEl.className = 'progress-fill' +
+      (remaining <= 5 ? ' danger' : remaining <= 10 ? ' warning' : '');
+
+    if (remaining === 30) {
+      // 新的30秒週期 → 自動重新取得
+      digits.className = 'otp-digits expired';
+      fetch2FA();
+    }
+  }, 1000);
+}
+
+// ===== 換取 Token =====
+async function submitToken() {
+  const account    = document.getElementById('accountName').value.trim();
+  const shortToken = document.getElementById('shortToken').value.trim().replace(/\s+/g, '');
+  const resultBox  = document.getElementById('tokenResult');
+  const btn        = document.getElementById('btnToken');
+  const btnText    = document.getElementById('btnTokenText');
+
+  if (!account)    return showTokenResult('error', '請輸入帳號名稱');
+  if (!shortToken) return showTokenResult('error', '請貼上短期 Token');
+
+  btn.disabled = true;
+  btnText.textContent = '處理中';
+  btnText.className = 'loading';
+  resultBox.className = 'result';
+
+  try {
+    const res = await fetch(WEBHOOK_TOKEN, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ account, short_token: shortToken })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      showTokenResult('success', data);
+      document.getElementById('shortToken').value = '';
+      document.getElementById('step2Num').className = 'step-num done';
+      document.getElementById('step2Num').textContent = '✓';
+    } else {
+      showTokenResult('error', data.message || '發生錯誤');
+    }
+  } catch(e) {
+    showTokenResult('error', '連線失敗：' + e.message);
+  } finally {
+    btn.disabled = false;
+    btnText.textContent = '換取60天Token + 取得ID';
+    btnText.className = '';
+  }
+}
+
+function showTokenResult(type, data) {
+  const box = document.getElementById('tokenResult');
+  if (type === 'success') {
+    box.className = 'result success';
+    box.innerHTML = `
+      <div style="font-weight:bold;margin-bottom:8px;">✅ 已自動存入 Sheets！</div>
+      <div class="result-row">
+        <span class="result-key">帳號</span>
+        <span class="result-val">${data.account}</span>
+      </div>
+      <div class="result-row">
+        <span class="result-key">Threads ID</span>
+        <span class="result-val" onclick="copy('${data.threadsId}')" title="點擊複製">
+          ${data.threadsId} 📋
+        </span>
+      </div>
+      <div class="result-row">
+        <span class="result-key">Token到期</span>
+        <span class="result-val">${data.expiryDate || '60天後'}</span>
+      </div>
+      <div class="result-row">
+        <span class="result-key">狀態</span>
+        <span class="result-val">等待測試 ✓</span>
+      </div>
+    `;
+  } else {
+    box.className = 'result error';
+    box.innerHTML = `<b>❌ 錯誤</b><br><span style="font-size:11px">${data}</span>`;
+  }
+}
+
+// ===== 換 IP =====
+async function triggerIP() {
+  const status = document.getElementById('ipStatus');
+  status.textContent = '📡 發送中...';
+  status.className = 'ip-status triggered';
+
+  try {
+    await fetch(PUSHCUT_URL, { mode: 'no-cors' });
+    status.textContent = '✅ 捷徑已觸發！手機正在換IP，記得重新連熱點';
+    status.className = 'ip-status done';
+    document.getElementById('step3Num').className = 'step-num done';
+    document.getElementById('step3Num').textContent = '✓';
+
+    // 30秒後提醒重置
+    setTimeout(() => {
+      status.textContent = '準備好了嗎？可繼續下一個帳號 👆';
+      status.className = 'ip-status';
+      // 重置步驟標記
+      ['step1Num','step2Num','step3Num'].forEach(id => {
+        document.getElementById(id).className = 'step-num';
+        document.getElementById(id).textContent = id.replace('step','').replace('Num','');
+      });
+      document.getElementById('tokenResult').className = 'result';
+      document.getElementById('accountName').value = '';
+      document.getElementById('accountName').focus();
+      clearOTP();
+    }, 30000);
+  } catch(e) {
+    status.textContent = '❌ 觸發失敗：' + e.message;
+    status.className = 'ip-status';
+  }
+}
+
+function copy(text) {
+  navigator.clipboard.writeText(text)
+    .then(() => alert('已複製：' + text))
+    .catch(() => {});
+}
+
+// Ctrl+Enter 送出 Token
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey && e.key === 'Enter') submitToken();
+});
+</script>
+</body>
+</html>
